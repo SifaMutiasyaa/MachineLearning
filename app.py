@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load model & scaler
-encoder = tf.keras.models.load_model('encoder_model.h5')
+encoder = tf.keras.models.load_model("encoder_model.keras")
 kmeans = joblib.load('kmeans_model.pkl')
 scaler = joblib.load('scaler.pkl')
 
