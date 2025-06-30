@@ -145,7 +145,7 @@ with st.sidebar:
 # Load model dan scaler
 @st.cache_resource
 def load_models():
-    encoder = tf.keras.models.load_model("encoder_model.keras")
+    encoder = tf.keras.models.load_model("encoder_model.h5")
     scaler = joblib.load("scaler.pkl")
     kmeans = joblib.load("kmeans_model.pkl")
     return encoder, scaler, kmeans
