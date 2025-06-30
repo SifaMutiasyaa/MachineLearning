@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import time
 import joblib
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
 # Set page config
 st.set_page_config(page_title="Clustering Sosial Ekonomi", layout="wide", page_icon="📊")
@@ -102,11 +105,11 @@ with st.sidebar:
         <h3>📊 Tentang Aplikasi</h3>
         <p>Aplikasi ini memprediksi cluster untuk data sosial ekonomi kabupaten/kota di Indonesia menggunakan model unsupervised learning:</p>
         <ul>
-            <li><b>Model</b>: Autoencoder + KMeans</li>
+            <li><b>Model</b>: PCA + KMeans</li>
             <li><b>Jumlah Cluster</b>: 3</li>
             <li><b>Algoritma</b>:
                 <ul>
-                    <li>Autoencoder untuk reduksi dimensi</li>
+                    <li>PCA untuk reduksi dimensi</li>
                     <li>K-Means untuk clustering</li>
                 </ul>
             </li>
@@ -145,7 +148,7 @@ with st.sidebar:
 @st.cache_resource
 def load_models():
     try:
-        # Gunakan PCA sebagai alternatif jika autoencoder bermasalah
+        # Load scaler and PCA model
         scaler = joblib.load("scaler.pkl")
         pca = joblib.load("pca_model.pkl")
         kmeans = joblib.load("kmeans_model.pkl")
@@ -306,7 +309,7 @@ if submitted:
                 
                 # Normalisasi nilai
                 max_val = max(values) * 1.2  # Beri sedikit ruang
-                values = [v / max_val for v in values]
+                values = [v / max_val for v in values] if max_val > 0 else [0 for _ in values]
                 
                 # Sudut untuk setiap sumbu
                 angles = np.linspace(0, 2 * np.pi, len(features_radar), endpoint=False).tolist()
