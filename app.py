@@ -1,13 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import tensorflow as tf
+import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
-import joblib
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+import os
 
 # Set page config
 st.set_page_config(page_title="Clustering Sosial Ekonomi", layout="wide", page_icon="📊")
@@ -105,11 +104,11 @@ with st.sidebar:
         <h3>📊 Tentang Aplikasi</h3>
         <p>Aplikasi ini memprediksi cluster untuk data sosial ekonomi kabupaten/kota di Indonesia menggunakan model unsupervised learning:</p>
         <ul>
-            <li><b>Model</b>: PCA + KMeans</li>
+            <li><b>Model</b>: Autoencoder + KMeans</li>
             <li><b>Jumlah Cluster</b>: 3</li>
             <li><b>Algoritma</b>:
                 <ul>
-                    <li>PCA untuk reduksi dimensi</li>
+                    <li>Autoencoder untuk reduksi dimensi</li>
                     <li>K-Means untuk clustering</li>
                 </ul>
             </li>
@@ -143,24 +142,42 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Tampilkan versi TensorFlow untuk debugging
+    st.write(f"TensorFlow version: {tf.__version__}")
 
-# Load model dan scaler
+# Load model dengan penanganan kompatibilitas
 @st.cache_resource
 def load_models():
     try:
-        # Load scaler and PCA model
-        scaler = joblib.load("scaler.pkl")
-        pca = joblib.load("pca_model.pkl")
-        kmeans = joblib.load("kmeans_model.pkl")
-        return scaler, pca, kmeans
+        # Coba muat model encoder
+        encoder = tf.keras.models.load_model("encoder_model.keras", compile=False)
     except Exception as e:
-        st.error(f"Error loading models: {e}")
+        st.error(f"Error loading encoder: {e}")
         st.stop()
+    
+    try:
+        scaler = joblib.load("scaler.pkl")
+    except Exception as e:
+        st.error(f"Error loading scaler: {e}")
+        st.stop()
+    
+    try:
+        kmeans = joblib.load("kmeans_model.pkl")
+    except Exception as e:
+        st.error(f"Error loading KMeans model: {e}")
+        st.stop()
+    
+    return encoder, scaler, kmeans
 
 try:
-    scaler, pca, kmeans = load_models()
+    encoder, scaler, kmeans = load_models()
 except Exception as e:
     st.error(f"Error loading models: {e}")
+    st.error("Pastikan model tersedia di direktori yang benar:")
+    st.error("- encoder_model.keras")
+    st.error("- scaler.pkl")
+    st.error("- kmeans_model.pkl")
     st.stop()
 
 # Kolom fitur sesuai dengan model
@@ -280,8 +297,8 @@ if submitted:
         try:
             # Preprocessing
             scaled = scaler.transform(df_input.values)
-            reduced = pca.transform(scaled)
-            label = kmeans.predict(reduced)[0]
+            encoded = encoder.predict(scaled, verbose=0)
+            label = kmeans.predict(encoded)[0]
             
             # Tampilkan hasil
             st.markdown(f'<div class="card cluster-{label}">', unsafe_allow_html=True)
@@ -420,8 +437,8 @@ if not submitted:
                 <h4>🔍 Teknik Unsupervised Learning</h4>
                 <p>Aplikasi ini menggunakan pendekatan unsupervised learning untuk mengelompokkan kabupaten/kota berdasarkan kesamaan karakteristik sosial ekonomi:</p>
                 <ol>
-                    <li><b>PCA</b>: Mengurangi dimensi data dari 10 fitur menjadi 2 komponen utama</li>
-                    <li><b>K-Means Clustering</b>: Mengelompokkan data menjadi 3 cluster berdasarkan komponen utama</li>
+                    <li><b>Autoencoder</b>: Mengurangi dimensi data dari 10 fitur menjadi fitur laten</li>
+                    <li><b>K-Means Clustering</b>: Mengelompokkan data menjadi 3 cluster berdasarkan fitur laten</li>
                 </ol>
             </div>
             
